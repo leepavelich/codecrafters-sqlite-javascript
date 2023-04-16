@@ -1,4 +1,4 @@
-![progress-banner](https://codecrafters.io/landing/images/default_progress_banners/sqlite.png)
+[![progress-banner](https://app.codecrafters.io/progress/sqlite/bdaa7772-8c16-411c-9267-34f39df04fcc)](https://app.codecrafters.io/users/leepavelich)
 
 This is a starting point for JavaScript solutions to the
 ["Build Your Own SQLite" Challenge](https://codecrafters.io/challenges/sqlite).
