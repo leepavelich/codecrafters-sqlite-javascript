@@ -2,23 +2,22 @@ import { open } from "fs/promises";
 
 const COMMANDS = [".dbinfo", ".tables"];
 
-const databaseFilePath = process.argv[2];
-const command = process.argv[3];
-
-if (COMMANDS.includes(command)) {
+async function readDatabaseInfo(databaseFilePath) {
   const databaseFileHandler = await open(databaseFilePath, "r");
 
+  const dbHeaderLength = 100; // bytes
+
   const { buffer: headerBuffer } = await databaseFileHandler.read({
-    length: 108,
+    length: dbHeaderLength,
     position: 0,
-    buffer: Buffer.alloc(108),
+    buffer: Buffer.alloc(dbHeaderLength),
   });
 
-  const pageSize = headerBuffer.readUInt16BE(16); // page size is 2 bytes starting at offset 16
+  const pageSize = headerBuffer.readUInt16BE(16);
 
   const { buffer: btreePageBuffer } = await databaseFileHandler.read({
     length: pageSize,
-    position: 100,
+    position: dbHeaderLength,
     buffer: Buffer.alloc(pageSize),
   });
 
@@ -27,13 +26,30 @@ if (COMMANDS.includes(command)) {
     t.replace("CREATE TABLE", "").trim()
   );
 
-  if (command === ".dbinfo") {
-    console.log(`database page size: ${pageSize}`);
-    console.log(`number of tables: ${tables.length}`);
-  }
-  if (command === ".tables") {
-    console.log(...tables.reverse());
-  }
-} else {
-  throw `Unknown command ${command}`;
+  await databaseFileHandler.close();
+
+  return { pageSize, tables };
 }
+
+async function executeCommand(databaseFilePath, command) {
+  if (COMMANDS.includes(command)) {
+    const { pageSize, tables } = await readDatabaseInfo(databaseFilePath);
+
+    if (command === ".dbinfo") {
+      console.log(`database page size: ${pageSize}`);
+      console.log(`number of tables: ${tables.length}`);
+    }
+    if (command === ".tables") {
+      console.log(...tables.reverse());
+    }
+  } else {
+    throw `Unknown command ${command}`;
+  }
+}
+
+const databaseFilePath = process.argv[2];
+const command = process.argv[3];
+
+executeCommand(databaseFilePath, command).catch((error) => {
+  console.error(error);
+});
