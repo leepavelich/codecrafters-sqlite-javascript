@@ -31,7 +31,7 @@ if (command === ".dbinfo") {
 
   const cellData = cellBuffer.toString();
 
-  const regex = /CREATE TABLE(?! sqlite_sequence)/g;
+  const regex = /CREATE TABLE(?! sqlite)/g;
   const numberOfTables = (cellData.match(regex) || []).length;
 
   console.log(`database page size: ${pageSize}`);
