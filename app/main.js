@@ -1,9 +1,11 @@
 import { open } from "fs/promises";
 
+const COMMANDS = [".dbinfo", ".tables"];
+
 const databaseFilePath = process.argv[2];
 const command = process.argv[3];
 
-if (command === ".dbinfo") {
+if (COMMANDS.includes(command)) {
   const databaseFileHandler = await open(databaseFilePath, "r");
 
   const { buffer: headerBuffer } = await databaseFileHandler.read({
@@ -20,22 +22,18 @@ if (command === ".dbinfo") {
     buffer: Buffer.alloc(pageSize),
   });
 
-  const cellOffset = btreePageBuffer.readUInt16BE(5); // b-tree header, offset 5, 2 bytes
-  const cellLength = pageSize - cellOffset;
+  const regex = /CREATE TABLE (?!sqlite_)(\w+)/g;
+  const tables = (btreePageBuffer.toString().match(regex) || []).map((t) =>
+    t.replace("CREATE TABLE", "").trim()
+  );
 
-  const { buffer: cellBuffer } = await databaseFileHandler.read({
-    length: cellLength,
-    position: cellOffset,
-    buffer: Buffer.alloc(cellLength),
-  });
-
-  const cellData = cellBuffer.toString();
-
-  const regex = /CREATE TABLE(?! sqlite)/g;
-  const numberOfTables = (cellData.match(regex) || []).length;
-
-  console.log(`database page size: ${pageSize}`);
-  console.log(`number of tables: ${numberOfTables}`);
+  if (command === ".dbinfo") {
+    console.log(`database page size: ${pageSize}`);
+    console.log(`number of tables: ${tables.length}`);
+  }
+  if (command === ".tables") {
+    console.log(...tables.reverse());
+  }
 } else {
   throw `Unknown command ${command}`;
 }
